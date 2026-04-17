@@ -18,6 +18,15 @@ async function findById(id) {
   return rows[0]
 }
 
+async function findByUserId(id_usuario) {
+  const [rows] = await db.execute(
+    'SELECT id_registro, id_usuario, nivel_glicose, data_hora, id_periodo FROM registroglicose WHERE id_usuario = ? ORDER BY data_hora DESC',
+    [id_usuario]
+  )
+
+  return rows
+}
+
 async function create(registroGlicose) {
   const { id_usuario, nivel_glicose, data_hora, id_periodo } = registroGlicose
   const conn = await db.getConnection()
@@ -88,5 +97,6 @@ module.exports = {
   findById,
   create,
   update,
-  deleteById
+  deleteById,
+  findByUserId
 }

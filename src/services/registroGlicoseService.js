@@ -1,4 +1,5 @@
 const registroGlicoseRepository = require('../repositories/registroGlicoseRepository')
+const userRepository = require('../repositories/userRepository')
 
 async function listRegistrosGlicose() {
   return await registroGlicoseRepository.findAll()
@@ -14,6 +15,26 @@ async function getRegistroGlicoseById(id) {
   }
 
   return registroGlicose
+}
+
+async function getRegistrosGlicoseByUserId(nome) {
+  const useId = await userRepository.findByLogin(nome);
+
+  if (!useId){
+     const error = new Error('Usuario não encontrado')
+    error.statusCode = 400
+    throw error
+  }
+
+  const registrosGlicose = await registroGlicoseRepository.findByUserId(useId)
+
+  if (!registrosGlicose || registrosGlicose.length === 0) {
+    const error = new Error('Nenhum registro de glicose encontrado para este usuário')
+    error.statusCode = 404
+    throw error
+  }
+
+  return registrosGlicose
 }
 
 async function createRegistroGlicose(data) {
@@ -75,5 +96,6 @@ module.exports = {
   getRegistroGlicoseById,
   createRegistroGlicose,
   updateRegistroGlicose,
-  deleteById
+  deleteById,
+  getRegistrosGlicoseByUserId
 }

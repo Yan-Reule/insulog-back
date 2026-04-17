@@ -1,4 +1,5 @@
 const userRepository = require('../repositories/userRepository')
+const passwordService = require('./passwordService')
 
 async function listUsers() {
   return await userRepository.findAll()
@@ -8,7 +9,7 @@ async function getUserById(id) {
   const user = await userRepository.findById(id)
 
   if (!user) {
-    const error = new Error('Usuário não encontrado')
+    const error = new Error('Usuario nao encontrado')
     error.statusCode = 404
     throw error
   }
@@ -25,7 +26,7 @@ async function deleteById(id) {
   const user = await userRepository.findById(id)
 
   if (!user) {
-    const error = new Error('Usuário não encontrado')
+    const error = new Error('Usuario nao encontrado')
     error.statusCode = 404
     throw error
   }
@@ -39,7 +40,7 @@ async function createUser(data) {
   console.log('createUser:', data)
 
   if (!nome || !email || !senha || !tipo_login || !tipo_usuario) {
-    const error = new Error('Todos os campos são obrigatórios')
+    const error = new Error('Todos os campos sao obrigatorios')
     error.statusCode = 400
     throw error
   }
@@ -47,19 +48,13 @@ async function createUser(data) {
   const tipoNormalizado = tipo_usuario.toLowerCase()
 
   if (!['medico', 'paciente'].includes(tipoNormalizado)) {
-    const error = new Error('tipo_usuario inválido')
-    error.statusCode = 400
-    throw error
-  }
-
-  if (tipoNormalizado === 'paciente' && !id_medico) {
-    const error = new Error('id_medico é obrigatório para usuários do tipo paciente')
+    const error = new Error('tipo_usuario invalido')
     error.statusCode = 400
     throw error
   }
 
   if (tipoNormalizado === 'medico' && !crm) {
-    const error = new Error('crm é obrigatório para usuários do tipo médico')
+    const error = new Error('crm e obrigatorio para usuarios do tipo medico')
     error.statusCode = 400
     throw error
   }
@@ -67,25 +62,34 @@ async function createUser(data) {
   const userExists = await userRepository.findByEmail(email)
 
   if (userExists) {
-    const error = new Error('Já existe um usuário com esse e-mail')
+    const error = new Error('Ja existe um usuario com esse e-mail')
     error.statusCode = 409
     throw error
   }
 
-  return await userRepository.create({ nome, email, senha, tipo_login, tipo_usuario, id_medico, crm }, tipoNormalizado)
+  const senhaCriptografada = passwordService.hashPassword(senha)
+
+  return await userRepository.create(
+    { nome, email, senha: senhaCriptografada, tipo_login, tipo_usuario, id_medico, crm },
+    tipoNormalizado
+  )
 }
 
 async function updateUser(id, data) {
   const { nome, email, senha, tipo_login, tipo_usuario, id_medico, crm } = data
 
   if (!nome || !email || !senha || !tipo_login || !tipo_usuario) {
-    const error = new Error('Todos os campos são obrigatórios')
+    const error = new Error('Todos os campos sao obrigatorios')
     error.statusCode = 400
     throw error
   }
 
-  return await userRepository.update(id, { nome, email, senha, tipo_login, tipo_usuario, id_medico, crm })
+  const senhaCriptografada = passwordService.hashPassword(senha)
 
+  return await userRepository.update(
+    id,
+    { nome, email, senha: senhaCriptografada, tipo_login, tipo_usuario, id_medico, crm }
+  )
 }
 
 module.exports = {

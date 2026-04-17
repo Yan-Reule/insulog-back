@@ -9,6 +9,16 @@ async function index(req, res, next) {
   }
 }
 
+async function showByUserId(req, res, next) {
+  try {
+    const { nome } = req.params
+    const registrosGlicose = await registroGlicoseService.getRegistrosGlicoseByUserId(nome)
+    return res.status(200).json(registrosGlicose)
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function show(req, res, next) {
   try {
     const { id } = req.params
@@ -53,5 +63,6 @@ module.exports = {
   show,
   create,
   update,
-  deleteById
+  deleteById,
+  showByUserId
 }

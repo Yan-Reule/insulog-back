@@ -57,6 +57,18 @@ async function findByEmail(email) {
   return rows[0]
 }
 
+async function findByLogin(username) {
+  const [rows] = await db.execute(
+    `SELECT id_usuario, nome, email, senha, tipo_login, tipo_usuario
+     FROM usuario
+     WHERE email = ? OR nome = ?
+     LIMIT 1`,
+    [username, username]
+  )
+
+  return rows[0]
+}
+
 async function findByType(tipo_usuario) {
   const [rows] = await db.execute(
     'SELECT id_usuario, nome, email, tipo_login, tipo_usuario FROM usuario WHERE tipo_usuario = ?',
@@ -68,6 +80,7 @@ async function findByType(tipo_usuario) {
 
 async function create(user, tipoNormalizado) {
   const { nome, email, senha, tipo_login, tipo_usuario, id_medico, crm } = user
+  const medicoId = id_medico || 16
 
   const conn = await db.getConnection()
 
@@ -91,7 +104,7 @@ async function create(user, tipoNormalizado) {
     if (tipoNormalizado === 'paciente') {
       await conn.execute(
         `INSERT INTO paciente (id_usuario, id_medico) VALUES (?, ?)`,
-        [idUsuario, id_medico]
+        [idUsuario, medicoId]
       )
     }
 
@@ -141,6 +154,7 @@ async function update(id, user) {
 module.exports = {
   findAll,
   findByEmail,
+  findByLogin,
   findById,
   create,
   findByType,

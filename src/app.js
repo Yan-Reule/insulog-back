@@ -1,4 +1,5 @@
 const express = require('express')
+const authRoutes = require('./routes/authRoutes')
 const userRoutes = require('./routes/userRoutes')
 const typeInsuRoutes = require('./routes/typeInsuRoutes')
 const periodoRoutes = require('./routes/periodoRoutes')
@@ -14,7 +15,7 @@ const app = express()
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173')
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.header('Access-Control-Allow-Headers', 'Content-Type')
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204)
@@ -31,6 +32,7 @@ app.get('/', (req, res) => {
   })
 })
 
+app.use('/', authRoutes)
 app.use('/usuarios', userRoutes)
 app.use('/tipos-insulina', typeInsuRoutes)
 app.use('/periodos', periodoRoutes)
