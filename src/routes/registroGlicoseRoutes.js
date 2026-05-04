@@ -4,6 +4,7 @@ const registroGlicoseController = require('../controllers/registroGlicoseControl
 const router = express.Router()
 
 router.get('/', registroGlicoseController.index)
+router.get('/dashboard', registroGlicoseController.getDashboard)
 router.get('/usuario/:id_usuario', registroGlicoseController.showByUserId)
 router.get('/:id', registroGlicoseController.show)
 router.post('/', registroGlicoseController.create)

@@ -92,11 +92,21 @@ async function deleteById(id) {
   )
 }
 
+async function findByUserIdAndPeriod(id_usuario, dataInicio, dataFim) {
+  const [rows] = await db.execute(
+    'SELECT id_registro, id_usuario, nivel_glicose, data_hora, id_periodo FROM registroglicose WHERE id_usuario = ? AND data_hora BETWEEN ? AND ? ORDER BY data_hora DESC',
+    [id_usuario, dataInicio, dataFim]
+  )
+
+  return rows
+}
+
 module.exports = {
   findAll,
   findById,
   create,
   update,
   deleteById,
-  findByUserId
+  findByUserId,
+  findByUserIdAndPeriod
 }

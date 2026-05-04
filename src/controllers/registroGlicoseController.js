@@ -29,6 +29,16 @@ async function show(req, res, next) {
   }
 }
 
+async function getDashboard(req, res, next) {
+  try {
+    const { id_usuario, dataInicio, dataFim } = req.query
+    const dashboardDados = await registroGlicoseService.getDashboardDados(id_usuario, dataInicio, dataFim)
+    return res.status(200).json(dashboardDados)
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function create(req, res, next) {
   try {
     const registroGlicose = await registroGlicoseService.createRegistroGlicose(req.body)
@@ -64,5 +74,6 @@ module.exports = {
   create,
   update,
   deleteById,
-  showByUserId
+  showByUserId,
+  getDashboard
 }
