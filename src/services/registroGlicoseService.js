@@ -6,10 +6,10 @@ async function listRegistrosGlicose() {
 }
 
 async function getRegistroGlicoseById(id) {
-  const registroGlicose = await registroGlicoseRepository.findById(id)
+  const registroGlicose = await registroGlicoseRepository.findDetalhadoById(id)
 
   if (!registroGlicose) {
-    const error = new Error('Registro de glicose não encontrado')
+    const error = new Error('Registro de glicose nao encontrado')
     error.statusCode = 404
     throw error
   }
@@ -17,19 +17,22 @@ async function getRegistroGlicoseById(id) {
   return registroGlicose
 }
 
-async function getRegistrosGlicoseByUserId(nome) {
-  const useId = await userRepository.findByLogin(nome)
+async function getRegistrosGlicoseByUserId(usuario) {
+  const usuarioId = Number(usuario)
+  const useId = Number.isNaN(usuarioId)
+    ? await userRepository.findByLogin(usuario)
+    : { id_usuario: usuarioId }
 
   if (!useId) {
-    const error = new Error('Usuario não encontrado')
+    const error = new Error('Usuario nao encontrado')
     error.statusCode = 400
     throw error
   }
 
-  const registrosGlicose = await registroGlicoseRepository.findByUserId(useId)
+  const registrosGlicose = await registroGlicoseRepository.findByUserId(useId.id_usuario)
 
   if (!registrosGlicose || registrosGlicose.length === 0) {
-    const error = new Error('Nenhum registro de glicose encontrado para este usuário')
+    const error = new Error('Nenhum registro de glicose encontrado para este usuario')
     error.statusCode = 404
     throw error
   }
@@ -77,15 +80,90 @@ function formatarDataHoraAtual() {
   return `${ano}-${mes}-${dia} ${hora}:${minuto}:${segundo}`
 }
 
+function montarRegistroCompleto(data, registroAtual = {}) {
+  const id_usuario = data.id_usuario ?? registroAtual.id_usuario
+  const nivel_glicose = data.nivel_glicose ?? registroAtual.nivel_glicose
+  const id_periodo = data.id_periodo ?? registroAtual.id_periodo
+  const data_hora = data.data_hora ?? registroAtual.data_hora ?? formatarDataHoraAtual()
+  const observacao = data.observacao ?? registroAtual.observacao ?? null
+
+  return {
+    id_usuario,
+    nivel_glicose,
+    data_hora,
+    id_periodo,
+    observacao
+  }
+}
+
+function validarGlicoseObrigatoria(glicose) {
+  if (!glicose.id_usuario || glicose.nivel_glicose === undefined || !glicose.id_periodo) {
+    const error = new Error('ID do usuario, nivel de glicose e periodo sao obrigatorios')
+    error.statusCode = 400
+    throw error
+  }
+}
+
+function normalizarInsulina(data) {
+  const insulina = data.insulina
+
+  if (insulina === null) {
+    return null
+  }
+
+  if (!insulina && data.id_tipo_insulina === undefined && data.unidade_insulina === undefined) {
+    return undefined
+  }
+
+  const dadosInsulina = insulina || {
+    id_tipo_insulina: data.id_tipo_insulina,
+    unidade_insulina: data.unidade_insulina
+  }
+
+  if (!dadosInsulina.id_tipo_insulina || dadosInsulina.unidade_insulina === undefined) {
+    const error = new Error('Tipo de insulina e quantidade sao obrigatorios quando a insulina for informada')
+    error.statusCode = 400
+    throw error
+  }
+
+  return {
+    id_tipo_insulina: dadosInsulina.id_tipo_insulina,
+    unidade_insulina: dadosInsulina.unidade_insulina
+  }
+}
+
+function normalizarLembrete(data, id_periodo) {
+  const lembrete = data.lembrete
+
+  if (lembrete === null) {
+    return null
+  }
+
+  if (!lembrete || lembrete.criar === false) {
+    return undefined
+  }
+
+  if (!lembrete.data_hora) {
+    const error = new Error('Horario do lembrete e obrigatorio quando o lembrete for criado')
+    error.statusCode = 400
+    throw error
+  }
+
+  return {
+    data_hora: lembrete.data_hora,
+    id_periodo: lembrete.id_periodo || id_periodo
+  }
+}
+
 async function getDashboardDados(id_usuario, dataInicio, dataFim) {
   if (!id_usuario) {
-    const error = new Error('ID do usuário é obrigatório')
+    const error = new Error('ID do usuario e obrigatorio')
     error.statusCode = 400
     throw error
   }
 
   if (!dataInicio || !dataFim) {
-    const error = new Error('Data de início e fim são obrigatórias')
+    const error = new Error('Data de inicio e fim sao obrigatorias')
     error.statusCode = 400
     throw error
   }
@@ -151,46 +229,45 @@ async function getDashboardDados(id_usuario, dataInicio, dataFim) {
 }
 
 async function createRegistroGlicose(data) {
-  const { id_usuario, nivel_glicose, data_hora, id_periodo } = data
+  const glicose = montarRegistroCompleto(data)
+  validarGlicoseObrigatoria(glicose)
 
-  if (!id_usuario || nivel_glicose === undefined || !id_periodo) {
-    const error = new Error('ID do usuário, nível de glicose e período são obrigatórios')
-    error.statusCode = 400
-    throw error
+  const insulina = normalizarInsulina(data)
+  const lembrete = normalizarLembrete(data, glicose.id_periodo)
+
+  if (!insulina && !lembrete) {
+    const registro = await registroGlicoseRepository.create(glicose)
+    return await registroGlicoseRepository.findDetalhadoById(registro.id_registro)
   }
 
-  const dataHoraFinal = data_hora || formatarDataHoraAtual()
-
-  return await registroGlicoseRepository.create({
-    id_usuario,
-    nivel_glicose,
-    data_hora: dataHoraFinal,
-    id_periodo
+  const registro = await registroGlicoseRepository.createCompleto({
+    glicose,
+    insulina,
+    lembrete
   })
+
+  return await registroGlicoseRepository.findDetalhadoById(registro.id_registro)
 }
 
 async function updateRegistroGlicose(id, data) {
-  const registroGlicose = await registroGlicoseRepository.findById(id)
+  const registroGlicose = await registroGlicoseRepository.findDetalhadoById(id)
 
   if (!registroGlicose) {
-    const error = new Error('Registro de glicose não encontrado')
+    const error = new Error('Registro de glicose nao encontrado')
     error.statusCode = 404
     throw error
   }
 
-  const { id_usuario, nivel_glicose, data_hora, id_periodo } = data
+  const glicose = montarRegistroCompleto(data, registroGlicose)
+  validarGlicoseObrigatoria(glicose)
 
-  if (!id_usuario || nivel_glicose === undefined || !data_hora || !id_periodo) {
-    const error = new Error('Todos os campos são obrigatórios')
-    error.statusCode = 400
-    throw error
-  }
+  const insulina = normalizarInsulina(data)
+  const lembrete = normalizarLembrete(data, glicose.id_periodo)
 
-  return await registroGlicoseRepository.update(id, {
-    id_usuario,
-    nivel_glicose,
-    data_hora,
-    id_periodo
+  return await registroGlicoseRepository.updateCompleto(id, {
+    glicose,
+    insulina,
+    lembrete
   })
 }
 
@@ -198,7 +275,7 @@ async function deleteById(id) {
   const registroGlicose = await registroGlicoseRepository.findById(id)
 
   if (!registroGlicose) {
-    const error = new Error('Registro de glicose não encontrado')
+    const error = new Error('Registro de glicose nao encontrado')
     error.statusCode = 404
     throw error
   }

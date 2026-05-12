@@ -3,7 +3,7 @@ const db = dataBase.pool
 
 async function findAll() {
   const [rows] = await db.execute(
-    'SELECT id_alarme, id_usuario, data_hora FROM alarme ORDER BY id_alarme ASC'
+    'SELECT id_alarme, id_usuario, data_hora, id_periodo, id_registro FROM alarme ORDER BY id_alarme ASC'
   )
 
   return rows
@@ -11,7 +11,7 @@ async function findAll() {
 
 async function findById(id) {
   const [rows] = await db.execute(
-    'SELECT id_alarme, id_usuario, data_hora FROM alarme WHERE id_alarme = ?',
+    'SELECT id_alarme, id_usuario, data_hora, id_periodo, id_registro FROM alarme WHERE id_alarme = ?',
     [id]
   )
 
@@ -19,15 +19,15 @@ async function findById(id) {
 }
 
 async function create(alarme) {
-  const { id_usuario, data_hora } = alarme
+  const { id_usuario, data_hora, id_periodo, id_registro } = alarme
   const conn = await db.getConnection()
 
   try {
     await conn.beginTransaction()
 
     const [result] = await conn.execute(
-      'INSERT INTO alarme (id_usuario, data_hora) VALUES (?, ?)',
-      [id_usuario, data_hora]
+      'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro) VALUES (?, ?, ?, ?)',
+      [id_usuario, data_hora, id_periodo || null, id_registro || null]
     )
 
     await conn.commit()
@@ -35,7 +35,9 @@ async function create(alarme) {
     return {
       id_alarme: result.insertId,
       id_usuario,
-      data_hora
+      data_hora,
+      id_periodo: id_periodo || null,
+      id_registro: id_registro || null
     }
   } catch (error) {
     await conn.rollback()
@@ -46,15 +48,15 @@ async function create(alarme) {
 }
 
 async function update(id, alarme) {
-  const { id_usuario, data_hora } = alarme
+  const { id_usuario, data_hora, id_periodo, id_registro } = alarme
   const conn = await db.getConnection()
 
   try {
     await conn.beginTransaction()
 
     await conn.execute(
-      'UPDATE alarme SET id_usuario = ?, data_hora = ? WHERE id_alarme = ?',
-      [id_usuario, data_hora, id]
+      'UPDATE alarme SET id_usuario = ?, data_hora = ?, id_periodo = ?, id_registro = ? WHERE id_alarme = ?',
+      [id_usuario, data_hora, id_periodo || null, id_registro || null, id]
     )
 
     await conn.commit()
@@ -62,7 +64,9 @@ async function update(id, alarme) {
     return {
       id_alarme: Number(id),
       id_usuario,
-      data_hora
+      data_hora,
+      id_periodo: id_periodo || null,
+      id_registro: id_registro || null
     }
   } catch (error) {
     await conn.rollback()
