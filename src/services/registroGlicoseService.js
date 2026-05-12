@@ -250,7 +250,7 @@ async function createRegistroGlicose(data) {
 }
 
 async function updateRegistroGlicose(id, data) {
-  const registroGlicose = await registroGlicoseRepository.findDetalhadoById(id)
+  const registroGlicose = await registroGlicoseRepository.findById(id)
 
   if (!registroGlicose) {
     const error = new Error('Registro de glicose nao encontrado')

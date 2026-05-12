@@ -319,32 +319,32 @@ async function findByUserIdAndPeriod(id_usuario, dataInicio, dataFim) {
 function formatarRegistroDetalhado(row) {
   return {
     id_registro: row.id_registro,
-    id_usuario: row.id_usuario,
-    nivel_glicose: row.nivel_glicose,
-    data_hora: row.data_hora,
-    id_periodo: row.id_periodo,
-    observacao: row.observacao,
+    glicose: {
+      nivel: Number(row.nivel_glicose),
+      unidade: 'mg/dL',
+      data_hora: row.data_hora
+    },
     periodo: {
       id_periodo: row.id_periodo,
       descricao: row.periodo_descricao
     },
+    observacao: row.observacao,
     insulina: row.id_registro_insulina
       ? {
           id_registro_insulina: row.id_registro_insulina,
-          id_registro: row.id_registro,
           id_tipo_insulina: row.id_tipo_insulina,
-          tipo_insulina: row.tipo_insulina_nome,
-          unidade_insulina: row.unidade_insulina
+          tipo: row.tipo_insulina_nome,
+          unidades: Number(row.unidade_insulina)
         }
       : null,
     lembrete: row.id_alarme
       ? {
           id_alarme: row.id_alarme,
-          id_usuario: row.id_usuario,
           data_hora: row.lembrete_data_hora,
-          id_periodo: row.lembrete_id_periodo,
-          periodo: row.lembrete_periodo_descricao,
-          id_registro: row.id_registro
+          periodo: {
+            id_periodo: row.lembrete_id_periodo,
+            descricao: row.lembrete_periodo_descricao
+          }
         }
       : null
   }
