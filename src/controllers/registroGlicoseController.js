@@ -11,8 +11,8 @@ async function index(req, res, next) {
 
 async function showByUserId(req, res, next) {
   try {
-    const { nome } = req.params
-    const registrosGlicose = await registroGlicoseService.getRegistrosGlicoseByUserId(nome)
+    const { id_usuario } = req.params
+    const registrosGlicose = await registroGlicoseService.getRegistrosGlicoseByUserId(id_usuario)
     return res.status(200).json(registrosGlicose)
   } catch (error) {
     next(error)
