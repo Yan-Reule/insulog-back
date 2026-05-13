@@ -214,6 +214,7 @@ async function getDashboardDados(id_usuario, dataInicio, dataFim) {
     return {
       id: reg.id_registro,
       horaDoRegistro: reg.data_hora,
+      periodo: reg.periodo,
       nivelGlicose: Math.round(reg.nivel_glicose),
       status: classificacao.status,
       statusDescricao: classificacao.descricao

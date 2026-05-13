@@ -3,7 +3,10 @@ const db = dataBase.pool
 
 async function findAll() {
   const [rows] = await db.execute(
-    'SELECT id_registro, id_usuario, nivel_glicose, data_hora, id_periodo, observacao FROM registroglicose ORDER BY id_registro ASC'
+    `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
+     FROM registroglicose rg
+     LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+     ORDER BY rg.id_registro ASC`
   )
 
   return rows
@@ -11,7 +14,10 @@ async function findAll() {
 
 async function findById(id) {
   const [rows] = await db.execute(
-    'SELECT id_registro, id_usuario, nivel_glicose, data_hora, id_periodo, observacao FROM registroglicose WHERE id_registro = ?',
+    `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
+     FROM registroglicose rg
+     LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+     WHERE rg.id_registro = ?`,
     [id]
   )
 
@@ -57,7 +63,11 @@ async function findDetalhadoById(id) {
 
 async function findByUserId(id_usuario) {
   const [rows] = await db.execute(
-    'SELECT id_registro, id_usuario, nivel_glicose, data_hora, id_periodo, observacao FROM registroglicose WHERE id_usuario = ? ORDER BY data_hora DESC',
+    `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
+     FROM registroglicose rg
+     LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+     WHERE rg.id_usuario = ?
+     ORDER BY rg.data_hora DESC`,
     [id_usuario]
   )
 
@@ -76,87 +86,17 @@ async function create(registroGlicose) {
       [id_usuario, nivel_glicose, data_hora, id_periodo, observacao ?? null]
     )
 
-    await conn.commit()
-
-    return {
-      id_registro: result.insertId,
-      id_usuario,
-      nivel_glicose,
-      data_hora,
-      id_periodo,
-      observacao: observacao ?? null
-    }
-  } catch (error) {
-    await conn.rollback()
-    throw error
-  } finally {
-    conn.release()
-  }
-}
-
-async function createCompleto(registro) {
-  const { glicose, insulina, lembrete } = registro
-  const conn = await db.getConnection()
-
-  try {
-    await conn.beginTransaction()
-
-    const [registroResult] = await conn.execute(
-      'INSERT INTO registroglicose (id_usuario, nivel_glicose, data_hora, id_periodo, observacao) VALUES (?, ?, ?, ?, ?)',
-      [
-        glicose.id_usuario,
-        glicose.nivel_glicose,
-        glicose.data_hora,
-        glicose.id_periodo,
-        glicose.observacao ?? null
-      ]
+    const [rows] = await conn.execute(
+      `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
+       FROM registroglicose rg
+       LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+       WHERE rg.id_registro = ?`,
+      [result.insertId]
     )
 
-    const idRegistro = registroResult.insertId
-    let registroInsulina = null
-    let registroLembrete = null
-
-    if (insulina) {
-      const [insulinaResult] = await conn.execute(
-        'INSERT INTO registroinsulina (id_registro, id_tipo_insulina, unidade_insulina) VALUES (?, ?, ?)',
-        [idRegistro, insulina.id_tipo_insulina, insulina.unidade_insulina]
-      )
-
-      registroInsulina = {
-        id_registro_insulina: insulinaResult.insertId,
-        id_registro: idRegistro,
-        id_tipo_insulina: insulina.id_tipo_insulina,
-        unidade_insulina: insulina.unidade_insulina
-      }
-    }
-
-    if (lembrete) {
-      const [lembreteResult] = await conn.execute(
-        'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro) VALUES (?, ?, ?, ?)',
-        [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, idRegistro]
-      )
-
-      registroLembrete = {
-        id_alarme: lembreteResult.insertId,
-        id_usuario: glicose.id_usuario,
-        data_hora: lembrete.data_hora,
-        id_periodo: lembrete.id_periodo,
-        id_registro: idRegistro
-      }
-    }
-
     await conn.commit()
 
-    return {
-      id_registro: idRegistro,
-      id_usuario: glicose.id_usuario,
-      nivel_glicose: glicose.nivel_glicose,
-      data_hora: glicose.data_hora,
-      id_periodo: glicose.id_periodo,
-      observacao: glicose.observacao ?? null,
-      insulina: registroInsulina,
-      lembrete: registroLembrete
-    }
+    return rows[0]
   } catch (error) {
     await conn.rollback()
     throw error
@@ -177,16 +117,17 @@ async function update(id, registroGlicose) {
       [id_usuario, nivel_glicose, data_hora, id_periodo, observacao ?? null, id]
     )
 
+    const [rows] = await conn.execute(
+      `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
+       FROM registroglicose rg
+       LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+       WHERE rg.id_registro = ?`,
+      [id]
+    )
+
     await conn.commit()
 
-    return {
-      id_registro: Number(id),
-      id_usuario,
-      nivel_glicose,
-      data_hora,
-      id_periodo,
-      observacao: observacao ?? null
-    }
+    return rows[0]
   } catch (error) {
     await conn.rollback()
     throw error
@@ -309,7 +250,11 @@ async function deleteById(id) {
 
 async function findByUserIdAndPeriod(id_usuario, dataInicio, dataFim) {
   const [rows] = await db.execute(
-    'SELECT id_registro, id_usuario, nivel_glicose, data_hora, id_periodo, observacao FROM registroglicose WHERE id_usuario = ? AND data_hora BETWEEN ? AND ? ORDER BY data_hora DESC',
+    `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
+     FROM registroglicose rg
+     LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+     WHERE rg.id_usuario = ? AND rg.data_hora BETWEEN ? AND ?
+     ORDER BY rg.data_hora DESC`,
     [id_usuario, dataInicio, dataFim]
   )
 

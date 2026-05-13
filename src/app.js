@@ -13,6 +13,18 @@ const errorHandler = require('./middlewares/errorHandler')
 const app = express()
 
 app.use((req, res, next) => {
+  const inicio = Date.now()
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`)
+
+  res.on('finish', () => {
+    const duracao = Date.now() - inicio
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duracao}ms)`)
+  })
+
+  next()
+})
+
+app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173')
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
   res.header('Access-Control-Allow-Headers', 'Content-Type')
@@ -25,6 +37,18 @@ app.use((req, res, next) => {
 })
 
 app.use(express.json())
+
+app.use((req, res, next) => {
+  if (Object.keys(req.query).length > 0) {
+    console.log('Query:', req.query)
+  }
+
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Body:', req.body)
+  }
+
+  next()
+})
 
 app.get('/', (req, res) => {
   return res.json({
