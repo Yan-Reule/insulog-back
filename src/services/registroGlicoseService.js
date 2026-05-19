@@ -17,7 +17,23 @@ async function getRegistroGlicoseById(id) {
   return registroGlicose
 }
 
-async function getRegistrosGlicoseByUserId(usuario) {
+function normalizarQuantidade(quantidade) {
+  if (quantidade === undefined || quantidade === null || quantidade === '') {
+    return undefined
+  }
+
+  const quantidadeNormalizada = Number(quantidade)
+
+  if (!Number.isInteger(quantidadeNormalizada) || quantidadeNormalizada <= 0) {
+    const error = new Error('Quantidade deve ser um numero inteiro maior que zero')
+    error.statusCode = 400
+    throw error
+  }
+
+  return quantidadeNormalizada
+}
+
+async function getRegistrosGlicoseByUserId(usuario, quantidade) {
   const usuarioId = Number(usuario)
   const useId = Number.isNaN(usuarioId)
     ? await userRepository.findByLogin(usuario)
@@ -29,7 +45,8 @@ async function getRegistrosGlicoseByUserId(usuario) {
     throw error
   }
 
-  const registrosGlicose = await registroGlicoseRepository.findByUserId(useId.id_usuario)
+  const quantidadeRegistros = normalizarQuantidade(quantidade)
+  const registrosGlicose = await registroGlicoseRepository.findByUserId(useId.id_usuario, quantidadeRegistros)
 
   if (!registrosGlicose || registrosGlicose.length === 0) {
     const error = new Error('Nenhum registro de glicose encontrado para este usuario')
@@ -37,7 +54,7 @@ async function getRegistrosGlicoseByUserId(usuario) {
     throw error
   }
 
-  return registrosGlicose
+  return registrosGlicose.map(formatarRegistroResumo)
 }
 
 function classificarGlicose(valor) {
@@ -57,12 +74,35 @@ function classificarGlicose(valor) {
 
   return {
     status: 1,
-    descricao: 'Tudo certo'
+    descricao: 'Normal'
+  }
+}
+
+function formatarRegistroResumo(registro) {
+  const nivelGlicose = Number(registro.nivel_glicose)
+  const classificacao = classificarGlicose(nivelGlicose)
+
+  return {
+    id: registro.id_registro,
+    horaDoRegistro: registro.data_hora,
+    periodo: registro.periodo,
+    nivelGlicose: Math.round(nivelGlicose),
+    status: classificacao.status,
+    statusDescricao: classificacao.descricao
   }
 }
 
 function formatarData(data) {
-  return new Date(data).toISOString().split('T')[0]
+  if (typeof data === 'string') {
+    return data.split(' ')[0].split('T')[0]
+  }
+
+  const pad = numero => String(numero).padStart(2, '0')
+  const ano = data.getFullYear()
+  const mes = pad(data.getMonth() + 1)
+  const dia = pad(data.getDate())
+
+  return `${ano}-${mes}-${dia}`
 }
 
 function formatarDataHoraAtual() {
@@ -176,9 +216,10 @@ async function getDashboardDados(id_usuario, dataInicio, dataFim) {
 
   if (!registros || registros.length === 0) {
     return {
+      mensagem: 'Nenhum registro nesse periodo',
       mediaDiaria: 0,
       statusMediaDiaria: 1,
-      statusMediaDiariaDescricao: 'Tudo certo',
+      statusMediaDiariaDescricao: 'Normal',
       registros: []
     }
   }
@@ -208,18 +249,7 @@ async function getDashboardDados(id_usuario, dataInicio, dataFim) {
   const mediaDiariaArredondada = Math.round(mediaDiaria)
   const classificacaoMediaDiaria = classificarGlicose(mediaDiariaArredondada)
 
-  const registrosFormatados = registrosNormalizados.map(reg => {
-    const classificacao = classificarGlicose(reg.nivel_glicose)
-
-    return {
-      id: reg.id_registro,
-      horaDoRegistro: reg.data_hora,
-      periodo: reg.periodo,
-      nivelGlicose: Math.round(reg.nivel_glicose),
-      status: classificacao.status,
-      statusDescricao: classificacao.descricao
-    }
-  })
+  const registrosFormatados = registrosNormalizados.map(formatarRegistroResumo)
 
   return {
     mediaDiaria: mediaDiariaArredondada,
@@ -241,13 +271,11 @@ async function createRegistroGlicose(data) {
     return await registroGlicoseRepository.findDetalhadoById(registro.id_registro)
   }
 
-  const registro = await registroGlicoseRepository.createCompleto({
+  return await registroGlicoseRepository.createCompleto({
     glicose,
     insulina,
     lembrete
   })
-
-  return await registroGlicoseRepository.findDetalhadoById(registro.id_registro)
 }
 
 async function updateRegistroGlicose(id, data) {

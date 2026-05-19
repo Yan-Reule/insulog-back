@@ -61,13 +61,15 @@ async function findDetalhadoById(id) {
   return formatarRegistroDetalhado(row)
 }
 
-async function findByUserId(id_usuario) {
+async function findByUserId(id_usuario, quantidade) {
+  const limit = quantidade ? ` LIMIT ${quantidade}` : ''
+
   const [rows] = await db.execute(
     `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
      FROM registroglicose rg
      LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
      WHERE rg.id_usuario = ?
-     ORDER BY rg.data_hora DESC`,
+     ORDER BY rg.data_hora DESC${limit}`,
     [id_usuario]
   )
 
@@ -134,6 +136,52 @@ async function update(id, registroGlicose) {
   } finally {
     conn.release()
   }
+}
+
+async function createCompleto(registro) {
+  const { glicose, insulina, lembrete } = registro
+  const conn = await db.getConnection()
+  let idRegistro
+
+  try {
+    await conn.beginTransaction()
+
+    const [result] = await conn.execute(
+      'INSERT INTO registroglicose (id_usuario, nivel_glicose, data_hora, id_periodo, observacao) VALUES (?, ?, ?, ?, ?)',
+      [
+        glicose.id_usuario,
+        glicose.nivel_glicose,
+        glicose.data_hora,
+        glicose.id_periodo,
+        glicose.observacao ?? null
+      ]
+    )
+
+    idRegistro = result.insertId
+
+    if (insulina) {
+      await conn.execute(
+        'INSERT INTO registroinsulina (id_registro, id_tipo_insulina, unidade_insulina) VALUES (?, ?, ?)',
+        [idRegistro, insulina.id_tipo_insulina, insulina.unidade_insulina]
+      )
+    }
+
+    if (lembrete) {
+      await conn.execute(
+        'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro) VALUES (?, ?, ?, ?)',
+        [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, idRegistro]
+      )
+    }
+
+    await conn.commit()
+  } catch (error) {
+    await conn.rollback()
+    throw error
+  } finally {
+    conn.release()
+  }
+
+  return await findDetalhadoById(idRegistro)
 }
 
 async function updateCompleto(id, registro) {

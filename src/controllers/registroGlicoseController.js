@@ -12,7 +12,19 @@ async function index(req, res, next) {
 async function showByUserId(req, res, next) {
   try {
     const { id_usuario } = req.params
-    const registrosGlicose = await registroGlicoseService.getRegistrosGlicoseByUserId(id_usuario)
+    const { dataInicio, dataFim, quantidade } = req.query
+
+    if (quantidade && quantidade !== 'null') {
+      const registrosGlicose = await registroGlicoseService.getRegistrosGlicoseByUserId(id_usuario, quantidade)
+      return res.status(200).json(registrosGlicose)
+    }
+
+    if (dataInicio || dataFim) {
+      const dashboardDados = await registroGlicoseService.getDashboardDados(id_usuario, dataInicio, dataFim)
+      return res.status(200).json(dashboardDados)
+    }
+
+    const registrosGlicose = await registroGlicoseService.getRegistrosGlicoseByUserId(id_usuario, quantidade)
     return res.status(200).json(registrosGlicose)
   } catch (error) {
     next(error)

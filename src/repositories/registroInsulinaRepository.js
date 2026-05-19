@@ -18,6 +18,29 @@ async function findById(id) {
   return rows[0]
 }
 
+async function findByUserId(id_usuario, quantidade) {
+  const limit = quantidade ? ` LIMIT ${quantidade}` : ''
+
+  const [rows] = await db.execute(
+    `SELECT
+      ri.id_registro_insulina,
+      ri.id_registro,
+      ri.id_tipo_insulina,
+      ri.unidade_insulina,
+      rg.id_usuario,
+      rg.data_hora,
+      ti.nome AS tipo_insulina
+    FROM registroinsulina ri
+    INNER JOIN registroglicose rg ON rg.id_registro = ri.id_registro
+    LEFT JOIN tipoinsulina ti ON ti.id_tipo_insulina = ri.id_tipo_insulina
+    WHERE rg.id_usuario = ?
+    ORDER BY rg.data_hora DESC${limit}`,
+    [id_usuario]
+  )
+
+  return rows
+}
+
 async function create(registroInsulina) {
   const { id_registro, id_tipo_insulina, unidade_insulina } = registroInsulina
   const conn = await db.getConnection()
@@ -84,6 +107,7 @@ async function deleteById(id) {
 module.exports = {
   findAll,
   findById,
+  findByUserId,
   create,
   update,
   deleteById

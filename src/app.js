@@ -25,6 +25,43 @@ app.use((req, res, next) => {
 })
 
 app.use((req, res, next) => {
+  const originalJson = res.json.bind(res)
+  const originalSend = res.send.bind(res)
+  let retornoRegistrado = false
+
+  function registrarRetorno(body) {
+    if (retornoRegistrado) {
+      return
+    }
+
+    retornoRegistrado = true
+
+    const retorno = Buffer.isBuffer(body)
+      ? body.toString('utf8')
+      : body
+
+    console.log('<retorno>', {
+      metodo: req.method,
+      rota: req.originalUrl,
+      status: res.statusCode,
+      body: retorno
+    })
+  }
+
+  res.json = function jsonInterceptado(body) {
+    registrarRetorno(body)
+    return originalJson(body)
+  }
+
+  res.send = function sendInterceptado(body) {
+    registrarRetorno(body)
+    return originalSend(body)
+  }
+
+  next()
+})
+
+app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173')
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
   res.header('Access-Control-Allow-Headers', 'Content-Type')

@@ -19,6 +19,17 @@ async function show(req, res, next) {
   }
 }
 
+async function showByUserId(req, res, next) {
+  try {
+    const { id_usuario } = req.params
+    const { quantidade } = req.query
+    const registrosInsulina = await registroInsulinaService.getRegistrosInsulinaByUserId(id_usuario, quantidade)
+    return res.status(200).json(registrosInsulina)
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function create(req, res, next) {
   try {
     const registroInsulina = await registroInsulinaService.createRegistroInsulina(req.body)
@@ -51,6 +62,7 @@ async function deleteById(req, res, next) {
 module.exports = {
   index,
   show,
+  showByUserId,
   create,
   update,
   deleteById
