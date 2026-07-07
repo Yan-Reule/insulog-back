@@ -160,6 +160,10 @@ function normalizarInsulina(data) {
     unidade_insulina: data.unidade_insulina
   }
 
+  if (Number(dadosInsulina.id_tipo_insulina) === 0 && Number(dadosInsulina.unidade_insulina) === 0) {
+    return undefined
+  }
+
   if (!dadosInsulina.id_tipo_insulina || dadosInsulina.unidade_insulina === undefined) {
     const error = new Error('Tipo de insulina e quantidade sao obrigatorios quando a insulina for informada')
     error.statusCode = 400
