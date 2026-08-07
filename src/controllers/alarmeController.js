@@ -8,6 +8,15 @@ async function index(req, res, next) {
     next(error)
   }
 }
+async function showByUsuarioId(req, res, next) {
+  try {
+    const { usuarioId } = req.params
+    const alarmes = await alarmeService.getAlarmesByUsuarioId(usuarioId)
+    return res.status(200).json(alarmes)
+  } catch (error) {
+    next(error)
+  }
+}
 
 async function show(req, res, next) {
   try {
@@ -53,5 +62,6 @@ module.exports = {
   show,
   create,
   update,
-  deleteById
+  deleteById,
+  showByUsuarioId
 }
