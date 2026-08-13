@@ -1,6 +1,8 @@
 const registroGlicoseRepository = require('../repositories/registroGlicoseRepository')
 const userRepository = require('../repositories/userRepository')
 
+const TODOS_DIAS_SEMANA = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM']
+
 async function listRegistrosGlicose() {
   return await registroGlicoseRepository.findAll()
 }
@@ -195,7 +197,8 @@ function normalizarLembrete(data, id_periodo) {
 
   return {
     data_hora: lembrete.data_hora,
-    id_periodo: lembrete.id_periodo || id_periodo
+    id_periodo: lembrete.id_periodo || id_periodo,
+    dias_semana: TODOS_DIAS_SEMANA
   }
 }
 

@@ -168,8 +168,8 @@ async function createCompleto(registro) {
 
     if (lembrete) {
       await conn.execute(
-        'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro) VALUES (?, ?, ?, ?)',
-        [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, idRegistro]
+        'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro, dias_semana) VALUES (?, ?, ?, ?, ?)',
+        [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, idRegistro, lembrete.dias_semana.join(',')]
       )
     }
 
@@ -241,13 +241,13 @@ async function updateCompleto(id, registro) {
 
       if (rows[0]) {
         await conn.execute(
-          'UPDATE alarme SET id_usuario = ?, data_hora = ?, id_periodo = ? WHERE id_alarme = ?',
-          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, rows[0].id_alarme]
+          'UPDATE alarme SET id_usuario = ?, data_hora = ?, id_periodo = ?, dias_semana = ? WHERE id_alarme = ?',
+          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, lembrete.dias_semana.join(','), rows[0].id_alarme]
         )
       } else {
         await conn.execute(
-          'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro) VALUES (?, ?, ?, ?)',
-          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, id]
+          'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro, dias_semana) VALUES (?, ?, ?, ?, ?)',
+          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, id, lembrete.dias_semana.join(',')]
         )
       }
     }
