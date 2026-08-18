@@ -41,6 +41,8 @@ async function findDetalhadoById(id) {
       a.id_alarme,
       a.data_hora AS lembrete_data_hora,
       a.id_periodo AS lembrete_id_periodo,
+      a.tem_som AS lembrete_tem_som,
+      a.tem_vibracao AS lembrete_tem_vibracao,
       pl.descricao AS lembrete_periodo_descricao
     FROM registroglicose rg
     LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
@@ -168,8 +170,8 @@ async function createCompleto(registro) {
 
     if (lembrete) {
       await conn.execute(
-        'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro, dias_semana) VALUES (?, ?, ?, ?, ?)',
-        [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, idRegistro, lembrete.dias_semana.join(',')]
+        'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro, dias_semana, tem_som, tem_vibracao) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, idRegistro, lembrete.dias_semana.join(','), lembrete.tem_som, lembrete.tem_vibracao]
       )
     }
 
@@ -241,13 +243,13 @@ async function updateCompleto(id, registro) {
 
       if (rows[0]) {
         await conn.execute(
-          'UPDATE alarme SET id_usuario = ?, data_hora = ?, id_periodo = ?, dias_semana = ? WHERE id_alarme = ?',
-          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, lembrete.dias_semana.join(','), rows[0].id_alarme]
+          'UPDATE alarme SET id_usuario = ?, data_hora = ?, id_periodo = ?, dias_semana = ?, tem_som = ?, tem_vibracao = ? WHERE id_alarme = ?',
+          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, lembrete.dias_semana.join(','), lembrete.tem_som, lembrete.tem_vibracao, rows[0].id_alarme]
         )
       } else {
         await conn.execute(
-          'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro, dias_semana) VALUES (?, ?, ?, ?, ?)',
-          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, id, lembrete.dias_semana.join(',')]
+          'INSERT INTO alarme (id_usuario, data_hora, id_periodo, id_registro, dias_semana, tem_som, tem_vibracao) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [glicose.id_usuario, lembrete.data_hora, lembrete.id_periodo, id, lembrete.dias_semana.join(','), lembrete.tem_som, lembrete.tem_vibracao]
         )
       }
     }
@@ -334,6 +336,8 @@ function formatarRegistroDetalhado(row) {
       ? {
           id_alarme: row.id_alarme,
           data_hora: row.lembrete_data_hora,
+          tem_som: Boolean(row.lembrete_tem_som),
+          tem_vibracao: Boolean(row.lembrete_tem_vibracao),
           periodo: {
             id_periodo: row.lembrete_id_periodo,
             descricao: row.lembrete_periodo_descricao

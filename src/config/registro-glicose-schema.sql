@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS alarme (
   id_registro INT NULL,
   dias_semana SET('SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM') NOT NULL,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  tem_som BOOLEAN NOT NULL DEFAULT TRUE,
+  tem_vibracao BOOLEAN NOT NULL DEFAULT TRUE,
   PRIMARY KEY (id_alarme),
   CONSTRAINT fk_alarme_usuario
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario),

@@ -198,7 +198,9 @@ function normalizarLembrete(data, id_periodo) {
   return {
     data_hora: lembrete.data_hora,
     id_periodo: lembrete.id_periodo || id_periodo,
-    dias_semana: TODOS_DIAS_SEMANA
+    dias_semana: TODOS_DIAS_SEMANA,
+    tem_som: false,
+    tem_vibracao: true
   }
 }
 
