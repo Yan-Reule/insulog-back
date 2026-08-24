@@ -8,6 +8,7 @@ async function index(req, res, next) {
     next(error)
   }
 }
+
 async function showByUsuarioId(req, res, next) {
   try {
     const { usuarioId } = req.params
