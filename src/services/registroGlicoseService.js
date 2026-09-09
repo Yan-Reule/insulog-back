@@ -268,6 +268,72 @@ async function getDashboardDados(id_usuario, dataInicio, dataFim) {
   }
 }
 
+async function getHistorico(id_usuario, dataInicio, dataFim) {
+  if (!id_usuario) {
+    const error = new Error('ID do usuario e obrigatorio')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (!dataInicio || !dataFim) {
+    const error = new Error('Data de inicio e fim sao obrigatorias')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (Number.isNaN(Date.parse(dataInicio)) || Number.isNaN(Date.parse(dataFim))) {
+    const error = new Error('Data de inicio e fim devem ser datas validas')
+    error.statusCode = 400
+    throw error
+  }
+
+  if (new Date(dataInicio) > new Date(dataFim)) {
+    const error = new Error('Data de inicio nao pode ser posterior a data de fim')
+    error.statusCode = 400
+    throw error
+  }
+
+  const registros = await registroGlicoseRepository.findByUserIdAndPeriod(
+    id_usuario,
+    dataInicio,
+    dataFim,
+    'ASC'
+  )
+
+  const registrosNormalizados = registros.map(registro => ({
+    ...registro,
+    nivel_glicose: Number(registro.nivel_glicose)
+  }))
+
+  const soma = registrosNormalizados.reduce((total, registro) => {
+    return total + registro.nivel_glicose
+  }, 0)
+
+  const media = registrosNormalizados.length > 0
+    ? Math.round(soma / registrosNormalizados.length)
+    : 0
+
+  const totaisPorStatus = registrosNormalizados.reduce((totais, registro) => {
+    const { status } = classificarGlicose(registro.nivel_glicose)
+    totais[status] += 1
+    return totais
+  }, { 0: 0, 1: 0, 2: 0 })
+
+  const classificacaoMedia = registrosNormalizados.length > 0
+    ? classificarGlicose(media)
+    : { status: 1, descricao: 'Normal' }
+
+  return {
+    media,
+    totalBaixos: totaisPorStatus[0],
+    totalNormais: totaisPorStatus[1],
+    totalAlertas: totaisPorStatus[2],
+    statusMedia: classificacaoMedia.status,
+    statusMediaDescricao: classificacaoMedia.descricao,
+    registros: registrosNormalizados.map(formatarRegistroResumo)
+  }
+}
+
 async function createRegistroGlicose(data) {
   const glicose = montarRegistroCompleto(data)
   validarGlicoseObrigatoria(glicose)
@@ -328,5 +394,6 @@ module.exports = {
   updateRegistroGlicose,
   deleteById,
   getRegistrosGlicoseByUserId,
-  getDashboardDados
+  getDashboardDados,
+  getHistorico
 }

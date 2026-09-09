@@ -51,6 +51,22 @@ async function getDashboard(req, res, next) {
   }
 }
 
+async function getHistorico(req, res, next) {
+  try {
+    const { id_usuario } = req.params
+    const { dataInicio, dataFim } = req.query
+    const historico = await registroGlicoseService.getHistorico(
+      id_usuario,
+      dataInicio,
+      dataFim
+    )
+
+    return res.status(200).json(historico)
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function create(req, res, next) {
   try {
     const registroGlicose = await registroGlicoseService.createRegistroGlicose(req.body)
@@ -87,5 +103,6 @@ module.exports = {
   update,
   deleteById,
   showByUserId,
-  getDashboard
+  getDashboard,
+  getHistorico
 }

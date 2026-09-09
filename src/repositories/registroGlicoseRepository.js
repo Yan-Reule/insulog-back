@@ -298,13 +298,15 @@ async function deleteById(id) {
   }
 }
 
-async function findByUserIdAndPeriod(id_usuario, dataInicio, dataFim) {
+async function findByUserIdAndPeriod(id_usuario, dataInicio, dataFim, ordem = 'DESC') {
+  const ordemData = ordem === 'ASC' ? 'ASC' : 'DESC'
+
   const [rows] = await db.execute(
     `SELECT rg.id_registro, rg.id_usuario, rg.nivel_glicose, rg.data_hora, p.descricao AS periodo
      FROM registroglicose rg
      LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
      WHERE rg.id_usuario = ? AND rg.data_hora BETWEEN ? AND ?
-     ORDER BY rg.data_hora DESC`,
+     ORDER BY rg.data_hora ${ordemData}`,
     [id_usuario, dataInicio, dataFim]
   )
 

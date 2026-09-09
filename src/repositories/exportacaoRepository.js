@@ -81,10 +81,46 @@ async function deleteById(id) {
   )
 }
 
+async function findDadosRelatorio(idUsuario, dataInicio, dataFim) {
+  const [usuarios] = await db.execute(
+    'SELECT id_usuario, nome, email FROM usuario WHERE id_usuario = ?',
+    [idUsuario]
+  )
+
+  if (!usuarios[0]) {
+    return undefined
+  }
+
+  const [registros] = await db.execute(
+    `SELECT
+      rg.id_registro,
+      rg.nivel_glicose,
+      rg.data_hora,
+      rg.observacao,
+      p.descricao AS periodo,
+      ri.id_registro_insulina,
+      ri.unidade_insulina,
+      ti.nome AS tipo_insulina
+    FROM registroglicose rg
+    LEFT JOIN periodo p ON p.id_periodo = rg.id_periodo
+    LEFT JOIN registroinsulina ri ON ri.id_registro = rg.id_registro
+    LEFT JOIN tipoinsulina ti ON ti.id_tipo_insulina = ri.id_tipo_insulina
+    WHERE rg.id_usuario = ? AND rg.data_hora BETWEEN ? AND ?
+    ORDER BY rg.data_hora ASC, ri.id_registro_insulina ASC`,
+    [idUsuario, dataInicio, dataFim]
+  )
+
+  return {
+    usuario: usuarios[0],
+    registros
+  }
+}
+
 module.exports = {
   findAll,
   findById,
   create,
   update,
-  deleteById
+  deleteById,
+  findDadosRelatorio
 }

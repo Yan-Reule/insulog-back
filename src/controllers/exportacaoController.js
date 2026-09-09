@@ -48,10 +48,31 @@ async function deleteById(req, res, next) {
   }
 }
 
+async function gerarRelatorio(req, res, next) {
+  try {
+    const { id_usuario, dataInicio, dataFim, formato } = req.query
+    const arquivo = await exportacaoService.gerarRelatorio({
+      idUsuario: id_usuario,
+      dataInicio,
+      dataFim,
+      formato
+    })
+
+    res.status(200)
+    res.setHeader('Content-Type', arquivo.contentType)
+    res.setHeader('Content-Disposition', `attachment; filename="${arquivo.nomeArquivo}"`)
+    res.setHeader('Content-Length', arquivo.buffer.length)
+    return res.end(arquivo.buffer)
+  } catch (error) {
+    next(error)
+  }
+}
+
 module.exports = {
   index,
   show,
   create,
   update,
-  deleteById
+  deleteById,
+  gerarRelatorio
 }
