@@ -37,8 +37,6 @@ async function deleteById(id) {
 async function createUser(data) {
   const { nome, email, senha, tipo_login, tipo_usuario, id_medico, crm } = data
 
-  console.log('createUser:', data)
-
   if (!nome || !email || !senha || !tipo_login || !tipo_usuario) {
     const error = new Error('Todos os campos sao obrigatorios')
     error.statusCode = 400
