@@ -7,6 +7,10 @@ const { issueToken } = require('../src/services/authTokenService')
 const { hashInviteCode } = require('../src/services/doctorService')
 
 test('links a patient to one doctor with a single-use invitation', async (t) => {
+  if (!process.env.DB_HOST || !process.env.DB_USER || !process.env.DB_NAME) {
+    return t.skip('Database integration test requires DB_HOST, DB_USER, and DB_NAME.')
+  }
+
   const [doctors] = await pool.execute('SELECT id_usuario FROM medico ORDER BY id_usuario LIMIT 1')
   if (!doctors[0]) return t.skip('No doctor account is available in the test database.')
 
