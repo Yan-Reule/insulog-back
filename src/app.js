@@ -8,6 +8,8 @@ const registroInsulinaRoutes = require('./routes/registroInsulinaRoutes')
 const exportacaoRoutes = require('./routes/exportacaoRoutes')
 const configuracaoRoutes = require('./routes/configuracaoRoutes')
 const alarmeRoutes = require('./routes/alarmeRoutes')
+const doctorRoutes = require('./routes/doctorRoutes')
+const patientRoutes = require('./routes/patientRoutes')
 const errorHandler = require('./middlewares/errorHandler')
 
 const app = express()
@@ -36,15 +38,10 @@ app.use((req, res, next) => {
 
     retornoRegistrado = true
 
-    const retorno = Buffer.isBuffer(body)
-      ? body.toString('utf8')
-      : body
-
     console.log('<retorno>', {
       metodo: req.method,
       rota: req.originalUrl,
-      status: res.statusCode,
-      body: retorno
+      status: res.statusCode
     })
   }
 
@@ -64,7 +61,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173')
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
-  res.header('Access-Control-Allow-Headers', 'Content-Type')
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204)
@@ -80,10 +77,6 @@ app.use((req, res, next) => {
     console.log('Query:', req.query)
   }
 
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log('Body:', req.body)
-  }
-
   next()
 })
 
@@ -95,6 +88,8 @@ app.get('/', (req, res) => {
 
 app.use('/', authRoutes)
 app.use('/usuarios', userRoutes)
+app.use('/medicos', doctorRoutes)
+app.use('/pacientes', patientRoutes)
 app.use('/tipos-insulina', typeInsuRoutes)
 app.use('/periodos', periodoRoutes)
 app.use('/registros-glicose', registroGlicoseRoutes)

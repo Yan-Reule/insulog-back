@@ -1,0 +1,2 @@
+ALTER TABLE paciente
+  MODIFY COLUMN id_medico INT NULL;
